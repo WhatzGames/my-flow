@@ -7,6 +7,8 @@ description: Maintain project bare repositories and implementation worktrees ins
 
 Before doing any work, complete My Flow's one-time setup in this order.
 
+At startup, the `SessionStart` hook runs `python3 scripts/target_workspace.py startup`. If a target is already configured, the command ensures the target, `bares`, and `worktrees` directories exist. If no target is configured, it initializes one from `MY_FLOW_STARTUP_PATH` when set, otherwise from the startup payload path such as `cwd` when Codex provides one. If no startup path is available, it leaves setup incomplete and the normal prompt-time guard asks the user for a target.
+
 First, if the target is unset, ask the user for the directory. After the user provides it, persist it with:
 
 ```bash
@@ -31,7 +33,7 @@ Setting the target creates this layout:
 
 Keep each project's shared Git data in `<target>/bares/<project>.git`. Create implementation checkouts with `git --git-dir=<bare-repo> worktree add <target>/worktrees/<project>-<branch> <branch>`. Do not edit files in `bares` directly.
 
-At agent startup, the `SessionStart` hook runs `git fetch --all --prune` against every valid immediate child repository in `bares`. Plain bare clones receive a missing fetch refspec that updates `refs/remotes/<remote>/*`; existing mirror or custom refspecs remain unchanged. If a refresh fails, report the affected repository and resolve the stale or inaccessible remote before relying on its refs.
+At agent startup, after startup setup, the `SessionStart` hook runs `git fetch --all --prune` against every valid immediate child repository in `bares`. Plain bare clones receive a missing fetch refspec that updates `refs/remotes/<remote>/*`; existing mirror or custom refspecs remain unchanged. If a refresh fails, report the affected repository and resolve the stale or inaccessible remote before relying on its refs.
 
 At agent startup, My Flow also configures each valid immediate child worktree in `worktrees` to use this plugin's Git hooks. The `commit-msg` hook appends `Co-authored-by: GPT-5 <noreply@openai.com>` when the trailer is missing, including for `git commit -m`.
 

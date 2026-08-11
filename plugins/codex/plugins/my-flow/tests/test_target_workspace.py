@@ -75,6 +75,35 @@ class TargetWorkspaceTests(unittest.TestCase):
         self.assertEqual(self.run_script("set", str(self.target)).returncode, 0)
         self.assertEqual(self.run_script("set-host", ssh_host).returncode, 0)
 
+    def test_startup_creates_target_from_environment_path(self) -> None:
+        startup_target = self.root / "startup" / "codex-projects"
+        self.environment["MY_FLOW_STARTUP_PATH"] = str(startup_target)
+
+        started = self.run_script("startup")
+        self.assertEqual(started.returncode, 0, started.stderr)
+        payload = json.loads(started.stdout)
+        self.assertEqual(payload["targetWorkspace"], str(startup_target.resolve()))
+        self.assertEqual(payload["sshHost"], None)
+        self.assertEqual(payload["bares"], str((startup_target / "bares").resolve()))
+        self.assertEqual(payload["worktrees"], str((startup_target / "worktrees").resolve()))
+        self.assertTrue(payload["created"])
+        self.assertTrue((startup_target / "bares").is_dir())
+        self.assertTrue((startup_target / "worktrees").is_dir())
+
+        status = self.run_script("status")
+        self.assertEqual(status.returncode, 1)
+        self.assertEqual(json.loads(status.stdout)["targetWorkspace"], str(startup_target.resolve()))
+
+    def test_startup_uses_payload_cwd_when_environment_path_is_unset(self) -> None:
+        startup_target = self.root / "payload-target"
+
+        started = self.run_script("startup", payload={"cwd": str(startup_target)})
+        self.assertEqual(started.returncode, 0, started.stderr)
+        payload = json.loads(started.stdout)
+        self.assertEqual(payload["targetWorkspace"], str(startup_target.resolve()))
+        self.assertTrue((startup_target / "bares").is_dir())
+        self.assertTrue((startup_target / "worktrees").is_dir())
+
     def test_set_creates_layout_and_refreshes_bare_repository(self) -> None:
         configured = self.run_script("set", str(self.target))
         self.assertEqual(configured.returncode, 0, configured.stderr)

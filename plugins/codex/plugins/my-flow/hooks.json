@@ -5,6 +5,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "./scripts/target_workspace.py startup"
+          },
+          {
+            "type": "command",
             "command": "./scripts/target_workspace.py refresh"
           },
           {

@@ -17,6 +17,7 @@ from enforce_ssh_host import repository_remote_violations
 
 
 CONFIG_ENV = "MY_FLOW_CONFIG"
+STARTUP_PATH_ENV = "MY_FLOW_STARTUP_PATH"
 SKIP_ENV = "MY_FLOW_SKIP_WORKSPACE_CHECK"
 CONFIG_PATH = Path(os.environ.get(CONFIG_ENV, Path.home() / ".codex" / "my-flow" / "config.json"))
 MUTATING_TOOL_PATTERNS = (
@@ -40,6 +41,8 @@ def main() -> int:
         return set_target(args.directory)
     if args.command == "set-host":
         return set_ssh_host(args.ssh_host)
+    if args.command == "startup":
+        return startup()
     if args.command == "clear":
         return clear_target()
     if args.command == "refresh":
@@ -57,6 +60,7 @@ def parse_args() -> argparse.Namespace:
     set_parser.add_argument("directory")
     host_parser = subparsers.add_parser("set-host", help="Persist the only allowed SSH Host alias.")
     host_parser.add_argument("ssh_host")
+    subparsers.add_parser("startup", help="Initialize the target workspace from config or startup context.")
     subparsers.add_parser("clear", help="Forget the target workspace.")
     subparsers.add_parser("refresh", help="Fetch all managed bare repositories.")
     subparsers.add_parser("hook", help="Run as a Codex hook.")
@@ -92,6 +96,54 @@ def set_ssh_host(ssh_host: str) -> int:
     write_config(target, ssh_host)
     print(json.dumps(workspace_status(target, ssh_host)))
     return 0
+
+
+def startup() -> int:
+    payload = read_payload()
+    target = load_target()
+    created = False
+    if target is None:
+        target = startup_target(payload)
+        if target is None:
+            print(json.dumps({"targetWorkspace": None, "sshHost": load_ssh_host(), "bares": None, "worktrees": None}))
+            return 0
+        target.mkdir(parents=True, exist_ok=True)
+        created = True
+
+    bares, worktrees = ensure_layout(target)
+    ssh_host = load_ssh_host()
+    write_config(target, ssh_host)
+    status_payload = workspace_status(target, ssh_host, bares, worktrees)
+    status_payload["created"] = created
+    print(json.dumps(status_payload))
+    return 0
+
+
+def startup_target(payload: Any) -> Path | None:
+    configured = os.environ.get(STARTUP_PATH_ENV)
+    if configured:
+        return Path(configured).expanduser().resolve()
+
+    for candidate in startup_path_candidates(payload):
+        path = Path(candidate).expanduser().resolve()
+        if is_my_flow_internal_path(path):
+            continue
+        return path
+    return None
+
+
+def startup_path_candidates(payload: Any) -> list[str]:
+    candidates: list[str] = []
+    if isinstance(payload, dict):
+        for key in ("startupPath", "startup_path", "cwd", "workdir", "workingDirectory", "working_directory"):
+            value = payload.get(key)
+            if isinstance(value, str) and value:
+                candidates.append(value)
+        for key in ("tool_input", "toolInput", "input", "parameters"):
+            value = payload.get(key)
+            if isinstance(value, dict):
+                candidates.extend(startup_path_candidates(value))
+    return candidates
 
 
 def write_config(target: Path, ssh_host: str | None) -> None:
@@ -282,7 +334,7 @@ def block(reason: str) -> int:
 
 def is_target_workspace_command(payload: Any) -> bool:
     for text in extract_text(payload):
-        if "target_workspace.py" in text and re.search(r"\b(set|set-host|status|clear|refresh)\b", text):
+        if "target_workspace.py" in text and re.search(r"\b(set|set-host|startup|status|clear|refresh)\b", text):
             return True
     return False
 
