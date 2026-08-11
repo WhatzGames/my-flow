@@ -1,0 +1,7 @@
+{
+  "tool_name": "functions.exec_command",
+  "tool_input": {
+    "cmd": "pwd",
+    "workdir": "/tmp"
+  }
+}

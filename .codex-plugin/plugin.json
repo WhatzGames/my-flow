@@ -1,0 +1,36 @@
+{
+  "name": "my-flow",
+  "version": "0.1.0+codex.20260811184724",
+  "description": "Managed worktrees, one enforced SSH Host, broad local access, and GitHub approval gates.",
+  "author": {
+    "name": "WhatzGames",
+    "url": "https://github.com/WhatzGames"
+  },
+  "repository": "git@github.com:WhatzGames/my-flow.git",
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "approval",
+    "git",
+    "gh",
+    "hooks",
+    "workspace"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "My Flow",
+    "shortDescription": "Managed worktrees with one SSH Host and guarded GitHub publishing.",
+    "longDescription": "My Flow remembers a target directory and SSH Host alias, restricts Git transport to that alias, refreshes bare repositories at agent startup, auto-allows routine worktree access, and requires explicit approval for GitHub publishing.",
+    "developerName": "WhatzGames",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Set my target working directory.",
+      "Set my SSH Host alias.",
+      "Prepare this GitHub push approval request."
+    ]
+  }
+}

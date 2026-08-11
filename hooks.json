@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/target_workspace.py refresh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/target_workspace.py hook"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/target_workspace.py hook"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Shell|exec_command|functions.exec_command|mcp__github__.*|github.*|mcp__git__.*|git.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/enforce_ssh_host.py"
+          },
+          {
+            "type": "command",
+            "command": "./scripts/require_github_push_approval.py"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/allow_worktree_access.py"
+          }
+        ]
+      }
+    ]
+  }
+}
