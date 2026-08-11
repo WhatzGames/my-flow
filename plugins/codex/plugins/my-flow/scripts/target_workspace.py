@@ -20,6 +20,8 @@ CONFIG_ENV = "MY_FLOW_CONFIG"
 STARTUP_PATH_ENV = "MY_FLOW_STARTUP_PATH"
 SKIP_ENV = "MY_FLOW_SKIP_WORKSPACE_CHECK"
 CONFIG_PATH = Path(os.environ.get(CONFIG_ENV, Path.home() / ".codex" / "my-flow" / "config.json"))
+PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+HOOKS_PATH = PLUGIN_ROOT / "git-hooks"
 MUTATING_TOOL_PATTERNS = (
     "write",
     "edit",
@@ -289,10 +291,59 @@ def hook() -> int:
         )
 
     ensure_layout(target)
+    hook_install_failures = install_git_hooks(target)
+    if hook_install_failures:
+        return block(format_hook_install_failures(hook_install_failures))
+
     violation = find_workspace_violation(payload, target)
     if violation is not None:
         return block(violation)
     return 0
+
+
+def install_git_hooks(target: Path) -> list[dict[str, str]]:
+    worktrees = target / WORKTREES_DIRECTORY
+    if not worktrees.is_dir():
+        return []
+
+    failed: list[dict[str, str]] = []
+    for worktree in sorted(path for path in worktrees.iterdir() if path.is_dir()):
+        if not is_git_worktree(worktree):
+            continue
+        current = subprocess.run(
+            ["git", "-C", str(worktree), "config", "core.hooksPath"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        if current.returncode == 0 and current.stdout.strip() == str(HOOKS_PATH):
+            continue
+        result = subprocess.run(
+            ["git", "-C", str(worktree), "config", "core.hooksPath", str(HOOKS_PATH)],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or result.stdout.strip() or f"git exited {result.returncode}"
+            failed.append({"worktree": worktree.name, "error": detail})
+
+    return failed
+
+
+def format_hook_install_failures(failures: list[dict[str, str]]) -> str:
+    detail = "; ".join(f"{failure['worktree']}: {failure['error']}" for failure in failures)
+    return "My Flow could not install Git hooks into every worktree: " + detail
+
+
+def is_git_worktree(path: Path) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
 
 
 def read_payload() -> Any:
@@ -473,8 +524,7 @@ def is_within(path: Path, target: Path) -> bool:
 
 
 def is_my_flow_internal_path(path: Path) -> bool:
-    plugin_root = Path(__file__).resolve().parents[1]
-    return path == plugin_root or plugin_root in path.parents or path == CONFIG_PATH or CONFIG_PATH in path.parents
+    return path == PLUGIN_ROOT or PLUGIN_ROOT in path.parents or path == CONFIG_PATH or CONFIG_PATH in path.parents
 
 
 if __name__ == "__main__":

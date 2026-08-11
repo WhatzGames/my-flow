@@ -5,15 +5,14 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
+
+from target_workspace import install_git_hooks, is_git_worktree
 
 
 CONFIG_ENV = "MY_FLOW_CONFIG"
 CONFIG_PATH = Path(os.environ.get(CONFIG_ENV, Path.home() / ".codex" / "my-flow" / "config.json"))
-PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-HOOKS_PATH = PLUGIN_ROOT / "git-hooks"
 
 
 def main() -> int:
@@ -27,22 +26,11 @@ def main() -> int:
         print(json.dumps({"installed": [], "failed": []}))
         return 0
 
-    installed: list[str] = []
-    failed: list[dict[str, str]] = []
-    for worktree in sorted(path for path in worktrees.iterdir() if path.is_dir()):
-        if not is_git_worktree(worktree):
-            continue
-        result = subprocess.run(
-            ["git", "-C", str(worktree), "config", "core.hooksPath", str(HOOKS_PATH)],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-        if result.returncode == 0:
-            installed.append(worktree.name)
-        else:
-            detail = result.stderr.strip() or result.stdout.strip() or f"git exited {result.returncode}"
-            failed.append({"worktree": worktree.name, "error": detail})
+    installed = [
+        worktree.name
+        for worktree in sorted(path for path in worktrees.iterdir() if path.is_dir() and is_git_worktree(path))
+    ]
+    failed = install_git_hooks(target)
 
     print(json.dumps({"installed": installed, "failed": failed}))
     if failed:
@@ -60,16 +48,6 @@ def load_target() -> Path | None:
     if not isinstance(value, str) or not value:
         return None
     return Path(value).expanduser().resolve()
-
-
-def is_git_worktree(path: Path) -> bool:
-    result = subprocess.run(
-        ["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"],
-        capture_output=True,
-        check=False,
-        text=True,
-    )
-    return result.returncode == 0 and result.stdout.strip() == "true"
 
 
 if __name__ == "__main__":

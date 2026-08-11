@@ -165,6 +165,32 @@ class TargetWorkspaceTests(unittest.TestCase):
         self.assertEqual(outside.returncode, 2)
         self.assertEqual(json.loads(outside.stdout)["decision"], "block")
 
+    def test_hook_installs_git_hooks_for_late_created_worktree(self) -> None:
+        self.configure()
+        checkout = self.target / "worktrees" / "example-main"
+        subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True, text=True)
+
+        before = subprocess.run(
+            ["git", "-C", str(checkout), "config", "core.hooksPath"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertNotEqual(before.stdout.strip(), str(PLUGIN_ROOT / "git-hooks"))
+
+        hooked = self.run_script(
+            "hook",
+            payload={"tool_name": "functions.exec_command", "tool_input": {"cmd": "git status", "workdir": str(checkout)}},
+        )
+        self.assertEqual(hooked.returncode, 0, hooked.stderr)
+        hooks_path = subprocess.run(
+            ["git", "-C", str(checkout), "config", "core.hooksPath"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        self.assertEqual(hooks_path, str(PLUGIN_ROOT / "git-hooks"))
+
     def test_access_hook_auto_allows_routine_worktree_tools(self) -> None:
         self.configure()
         checkout = self.target / "worktrees" / "example-main"
