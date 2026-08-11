@@ -33,6 +33,8 @@ Keep each project's shared Git data in `<target>/bares/<project>.git`. Create im
 
 At agent startup, the `SessionStart` hook runs `git fetch --all --prune` against every valid immediate child repository in `bares`. Plain bare clones receive a missing fetch refspec that updates `refs/remotes/<remote>/*`; existing mirror or custom refspecs remain unchanged. If a refresh fails, report the affected repository and resolve the stale or inaccessible remote before relying on its refs.
 
+At agent startup, My Flow also configures each valid immediate child worktree in `worktrees` to use this plugin's Git hooks. The `commit-msg` hook appends `Co-authored-by: GPT-5 <noreply@openai.com>` when the trailer is missing, including for `git commit -m`.
+
 Use the configured SSH Host alias for every SSH and network Git remote, for example `git@HOST_ALIAS:owner/repository.git` or `ssh://git@HOST_ALIAS/owner/repository.git`. The SSH host hook blocks direct SSH commands, Git URLs, configured Git remotes, HTTPS/Git-protocol remotes, and `gh repo clone` when they bypass the selected alias. Local filesystem remotes remain allowed. Ordinary browser and web traffic is not restricted by the SSH Host policy.
 
 After a target is set, run shell commands with `workdir` inside `<target>/worktrees` and keep file edits there. If Codex opened elsewhere, treat that as only the host launch location.

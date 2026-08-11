@@ -6,6 +6,10 @@
           {
             "type": "command",
             "command": "./scripts/target_workspace.py refresh"
+          },
+          {
+            "type": "command",
+            "command": "./scripts/install_git_hooks.py"
           }
         ]
       }

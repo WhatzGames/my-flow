@@ -16,6 +16,8 @@ SCRIPT = PLUGIN_ROOT / "scripts" / "target_workspace.py"
 ACCESS_SCRIPT = PLUGIN_ROOT / "scripts" / "allow_worktree_access.py"
 SSH_SCRIPT = PLUGIN_ROOT / "scripts" / "enforce_ssh_host.py"
 PUSH_SCRIPT = PLUGIN_ROOT / "scripts" / "require_github_push_approval.py"
+INSTALL_HOOKS_SCRIPT = PLUGIN_ROOT / "scripts" / "install_git_hooks.py"
+COMMIT_TRAILER = "Co-authored-by: GPT-5 <noreply@openai.com>"
 
 
 class TargetWorkspaceTests(unittest.TestCase):
@@ -54,6 +56,15 @@ class TargetWorkspaceTests(unittest.TestCase):
         return subprocess.run(
             ["python3", str(SSH_SCRIPT)],
             input=json.dumps(payload),
+            capture_output=True,
+            check=False,
+            env=self.environment,
+            text=True,
+        )
+
+    def run_install_hooks(self) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", str(INSTALL_HOOKS_SCRIPT)],
             capture_output=True,
             check=False,
             env=self.environment,
@@ -250,6 +261,49 @@ class TargetWorkspaceTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("git push", result.stderr)
+
+    def test_installed_commit_hook_adds_codex_coauthor(self) -> None:
+        self.configure()
+        checkout = self.target / "worktrees" / "example-main"
+        subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True, text=True)
+
+        installed = self.run_install_hooks()
+        self.assertEqual(installed.returncode, 0, installed.stderr)
+        self.assertEqual(json.loads(installed.stdout)["installed"], ["example-main"])
+        hooks_path = subprocess.run(
+            ["git", "-C", str(checkout), "config", "core.hooksPath"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        self.assertEqual(hooks_path, str(PLUGIN_ROOT / "git-hooks"))
+
+        (checkout / "README.md").write_text("# Example\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(checkout), "add", "README.md"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(checkout),
+                "-c",
+                "user.name=My Flow Test",
+                "-c",
+                "user.email=my-flow@example.invalid",
+                "commit",
+                "-m",
+                "Initial commit",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        message = subprocess.run(
+            ["git", "-C", str(checkout), "log", "-1", "--format=%B"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        self.assertIn(COMMIT_TRAILER, message)
 
 
 if __name__ == "__main__":

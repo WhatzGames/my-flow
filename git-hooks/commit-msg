@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+"""Ensure Codex commits include the GPT-5 co-author trailer."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+TRAILER = "Co-authored-by: GPT-5 <noreply@openai.com>"
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("usage: commit-msg <message-file>", file=sys.stderr)
+        return 2
+
+    message_path = Path(sys.argv[1])
+    message = message_path.read_text(encoding="utf-8")
+    if TRAILER in message:
+        return 0
+
+    stripped = message.rstrip()
+    separator = "\n\n" if stripped else ""
+    message_path.write_text(f"{stripped}{separator}{TRAILER}\n", encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
