@@ -1,0 +1,25 @@
+{
+  "name": "my-testing",
+  "version": "0.1.0",
+  "description": "Project-specific test strategy selection, coverage guidance, and visual QA workflows.",
+  "author": {
+    "name": "Personal"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "My Testing",
+    "shortDescription": "Project-aware testing and visual QA strategy.",
+    "longDescription": "My Testing selects a project-specific testing strategy before Codex runs validation. It prefers repository-native commands, detects common stacks, and applies the user's Freenet static-site plus local-node wrapper workflow for owned Freenet repositories.",
+    "developerName": "Personal",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Choose the right testing strategy for this repository.",
+      "Run validation and visual QA for this project.",
+      "Check test coverage and report gaps."
+    ]
+  }
+}
