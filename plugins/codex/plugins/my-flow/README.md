@@ -29,7 +29,7 @@ Within `worktrees`, permission requests are automatically allowed for non-destru
 Repository target:
 
 ```text
-git@github.com:WhatzGames/my-flow.git
+git@github.com:OWNER/my-flow.git
 ```
 
 ## Local Validation

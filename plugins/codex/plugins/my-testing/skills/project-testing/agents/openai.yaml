@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Testing"
+  short_description: "Choose project-specific test strategy"
+  default_prompt: "Use $project-testing to choose and run the right test strategy."

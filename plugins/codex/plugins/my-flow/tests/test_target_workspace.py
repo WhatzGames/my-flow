@@ -261,18 +261,18 @@ class TargetWorkspaceTests(unittest.TestCase):
 
         allowed_commands = (
             "ssh github-work",
-            "git clone git@github-work:WhatzGames/project.git",
+            "git clone git@github-work:OWNER/project.git",
             "git push origin HEAD:refs/heads/main",
         )
         blocked_commands = (
             "ssh github.com",
             "ssh -o HostName=github.com github-work",
             "ssh -F /tmp/other-config github-work",
-            "git clone git@github.com:WhatzGames/project.git",
-            "git clone https://github.com/WhatzGames/project.git",
+            "git clone git@github.com:OWNER/project.git",
+            "git clone https://github.com/OWNER/project.git",
             "GIT_SSH_COMMAND='ssh github.com' git fetch",
             "git -c core.sshCommand='ssh github.com' fetch",
-            "gh repo clone WhatzGames/project",
+            "gh repo clone OWNER/project",
         )
         for command in allowed_commands:
             result = self.run_ssh_hook(
@@ -290,7 +290,7 @@ class TargetWorkspaceTests(unittest.TestCase):
         managed = self.target / "bares" / "blocked.git"
         subprocess.run(["git", "init", "--bare", str(managed)], check=True, capture_output=True, text=True)
         subprocess.run(
-            ["git", f"--git-dir={managed}", "remote", "add", "origin", "git@github.com:WhatzGames/project.git"],
+            ["git", f"--git-dir={managed}", "remote", "add", "origin", "git@github.com:OWNER/project.git"],
             check=True,
         )
 
