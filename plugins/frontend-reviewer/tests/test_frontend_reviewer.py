@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+HOOKS_PATH = PLUGIN_ROOT / "hooks.json"
 SESSION_SCRIPT = PLUGIN_ROOT / "scripts" / "review_session.py"
 GUARD_SCRIPT = PLUGIN_ROOT / "scripts" / "review_guard.py"
 
@@ -94,8 +95,17 @@ class FrontendReviewerTests(unittest.TestCase):
         result = self.session("stop", str(self.worktree), "--token", token)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_plugin_guard_runs_before_every_tool(self) -> None:
+        hooks = json.loads(HOOKS_PATH.read_text(encoding="utf-8"))["hooks"]
+        self.assertEqual(set(hooks), {"PreToolUse"})
+        entries = hooks["PreToolUse"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["matcher"], ".*")
+        self.assertEqual(entries[0]["hooks"][0]["command"], "./scripts/review_guard.py")
+
     def test_default_round_limit_is_three_and_round_four_is_rejected(self) -> None:
         token = self.start()
+        self.assertRegex(token, r"^[0-9a-f]{64}$")
         session = self.session_status()
         self.assertEqual(session["maxRounds"], 3)
         self.assertFalse((self.worktree / ".reviews" / "session.json").exists())

@@ -24,10 +24,6 @@
           {
             "type": "command",
             "command": "./scripts/target_workspace.py hook"
-          },
-          {
-            "type": "command",
-            "command": "./scripts/review_guard.py"
           }
         ]
       }
