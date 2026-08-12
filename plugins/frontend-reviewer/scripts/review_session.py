@@ -87,7 +87,9 @@ def start(worktree: Path, round_number: int, max_rounds: int | None) -> int:
     if round_number > 1 and not (reviews / f"round-{round_number - 1:02d}" / "summary.json").is_file():
         raise ReviewError("Validate the preceding round before starting the next round.")
 
-    token = secrets.token_urlsafe(32)
+    # Hex tokens never begin with an option prefix, so they remain safe when
+    # passed to argparse as the value following --token.
+    token = secrets.token_hex(32)
     reviews.mkdir(parents=True, exist_ok=True)
     (reviews / f"round-{round_number:02d}").mkdir(parents=True, exist_ok=True)
     SESSION_DIRECTORY.mkdir(parents=True, exist_ok=True)

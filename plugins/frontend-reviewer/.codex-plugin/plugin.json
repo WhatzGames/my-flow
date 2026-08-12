@@ -1,0 +1,32 @@
+{
+  "name": "frontend-reviewer",
+  "version": "0.1.0+codex.20260812134522",
+  "description": "Guarded frontend reviews with separate UI and UX subagents and concise iterative findings.",
+  "author": {
+    "name": "Personal"
+  },
+  "license": "MIT",
+  "keywords": [
+    "frontend-review",
+    "ui",
+    "ux",
+    "review",
+    "subagents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Frontend Reviewer",
+    "shortDescription": "Guarded parallel UI and UX review rounds.",
+    "longDescription": "Frontend Reviewer coordinates dedicated UI and UX subagents, stores concise findings in .reviews, tracks resolution across rounds, and enforces review-only worktree access.",
+    "developerName": "Personal",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Review this frontend with separate UI and UX passes.",
+      "Run another frontend review round and re-evaluate the existing findings."
+    ]
+  }
+}
