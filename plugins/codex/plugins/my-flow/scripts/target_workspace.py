@@ -393,13 +393,18 @@ def is_target_workspace_command(payload: Any) -> bool:
 def find_workspace_violation(payload: Any, target: Path) -> str | None:
     tool_name = get_tool_name(payload)
     lower_tool = tool_name.lower()
-    if not any(pattern in lower_tool for pattern in MUTATING_TOOL_PATTERNS):
-        return None
-
     worktrees = target / WORKTREES_DIRECTORY
     input_payload = get_tool_input(payload)
     workdir = first_string(input_payload, ("workdir", "cwd", "workingDirectory", "working_directory"))
     command = first_string(input_payload, ("cmd", "command", "script"))
+
+    if workdir:
+        resolved_workdir = Path(workdir).expanduser().resolve()
+        if not is_within(resolved_workdir, worktrees) and not is_my_flow_internal_path(resolved_workdir):
+            return f"My Flow blocked workdir `{resolved_workdir}` outside managed worktrees directory `{worktrees}`."
+
+    if not any(pattern in lower_tool for pattern in MUTATING_TOOL_PATTERNS):
+        return None
 
     if "apply_patch" in lower_tool and command:
         for path in patch_paths(command):
@@ -414,11 +419,6 @@ def find_workspace_violation(payload: Any, target: Path) -> str | None:
     for path in absolute_paths(input_payload):
         if not is_within(path, worktrees) and not is_my_flow_internal_path(path):
             return f"My Flow blocked implementation work outside `{worktrees}`. Path `{path}` is not in the managed worktrees directory."
-
-    if workdir:
-        resolved_workdir = Path(workdir).expanduser().resolve()
-        if not is_within(resolved_workdir, worktrees) and not is_my_flow_internal_path(resolved_workdir):
-            return f"My Flow blocked workdir `{resolved_workdir}` outside managed worktrees directory `{worktrees}`."
 
     return None
 

@@ -9,15 +9,17 @@ Coordinate independent UI and UX review passes while the parent agent owns fixes
 
 ## Set The Boundary
 
+The plugin requires the target workspace configured by My Flow. Its general workspace guard applies before review-session restrictions and keeps all shell workdirs and implementation changes inside `<target>/worktrees`, including when no review session is active.
+
 1. Resolve one immediate My Flow worktree as the designated review target.
 2. Use `.reviews` as the only report directory. Treat similarly named directories such as `.review` or `.review.` as invalid.
 3. Default to at most three rounds. Use another maximum only when the user explicitly requests it.
 4. Prepare any local server or build needed for visual inspection before activating the review session. Reviewers may inspect only worktree files, `file://` pages inside the worktree, and an already-running localhost application. Do not give them internet or connector sources.
 
-Start each round from the plugin root and retain the returned stop token only in the parent context:
+Start each round with the shell `workdir` set to the designated worktree. Invoke the session script by its absolute path under this plugin root and retain the returned stop token only in the parent context:
 
 ```bash
-python3 scripts/review_session.py start /absolute/managed/worktree --round 1 --max-rounds 3
+python3 /absolute/plugin/root/scripts/review_session.py start /absolute/managed/worktree --round 1 --max-rounds 3
 ```
 
 The active session makes the plugin hook block reads outside the designated worktree and writes outside its `.reviews` directory. Never disclose the stop token to a reviewer.
@@ -65,7 +67,7 @@ Use only `high`, `medium`, or `low` severity and `open`, `completed`, or `deferr
 Wait for both reviewers, then validate their reports while the guard remains active:
 
 ```bash
-python3 scripts/review_session.py validate /absolute/managed/worktree --round 1 --token PRIVATE_TOKEN
+python3 /absolute/plugin/root/scripts/review_session.py validate /absolute/managed/worktree --round 1 --token PRIVATE_TOKEN
 ```
 
 Validation requires every prior finding to be re-evaluated. From round two onward, unresolved findings must decrease. An equal or larger unresolved count is accepted only when every remaining item is `deferred-regression` with a concrete risk explanation.
@@ -73,7 +75,7 @@ Validation requires every prior finding to be re-evaluated. From round two onwar
 Stop the guarded session with the private token:
 
 ```bash
-python3 scripts/review_session.py stop /absolute/managed/worktree --token PRIVATE_TOKEN
+python3 /absolute/plugin/root/scripts/review_session.py stop /absolute/managed/worktree --token PRIVATE_TOKEN
 ```
 
 The parent agent then re-evaluates the reports, rejects false positives, and applies safe fixes outside `.reviews`. Start the next guarded round only after those changes are ready.

@@ -15,6 +15,7 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 HOOKS_PATH = PLUGIN_ROOT / "hooks.json"
 SESSION_SCRIPT = PLUGIN_ROOT / "scripts" / "review_session.py"
 GUARD_SCRIPT = PLUGIN_ROOT / "scripts" / "review_guard.py"
+WORKSPACE_GUARD_SCRIPT = PLUGIN_ROOT / "scripts" / "workspace_guard.py"
 
 
 def finding(identifier: str, status: str = "open", risk: str = "") -> dict[str, str]:
@@ -72,6 +73,16 @@ class FrontendReviewerTests(unittest.TestCase):
             text=True,
         )
 
+    def workspace_guard(self, tool_name: str, tool_input: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", str(WORKSPACE_GUARD_SCRIPT)],
+            input=json.dumps({"tool_name": tool_name, "tool_input": tool_input}),
+            capture_output=True,
+            check=False,
+            env=self.environment,
+            text=True,
+        )
+
     def start(self, round_number: int = 1, max_rounds: int | None = None) -> str:
         arguments = ["start", str(self.worktree), "--round", str(round_number)]
         if max_rounds is not None:
@@ -101,7 +112,20 @@ class FrontendReviewerTests(unittest.TestCase):
         entries = hooks["PreToolUse"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["matcher"], ".*")
-        self.assertEqual(entries[0]["hooks"][0]["command"], "./scripts/review_guard.py")
+        self.assertEqual(
+            [hook["command"] for hook in entries[0]["hooks"]],
+            ["./scripts/workspace_guard.py", "./scripts/review_guard.py"],
+        )
+
+    def test_workspace_guard_applies_without_an_active_review_session(self) -> None:
+        inside = self.workspace_guard(
+            "functions.exec_command", {"cmd": "pwd", "workdir": str(self.worktree)}
+        )
+        outside = self.workspace_guard(
+            "functions.exec_command", {"cmd": "pwd", "workdir": str(self.target)}
+        )
+        self.assertEqual(inside.returncode, 0, inside.stderr)
+        self.assertEqual(outside.returncode, 2)
 
     def test_default_round_limit_is_three_and_round_four_is_rejected(self) -> None:
         token = self.start()

@@ -17,6 +17,9 @@ ACCESS_SCRIPT = PLUGIN_ROOT / "scripts" / "allow_worktree_access.py"
 SSH_SCRIPT = PLUGIN_ROOT / "scripts" / "enforce_ssh_host.py"
 PUSH_SCRIPT = PLUGIN_ROOT / "scripts" / "require_github_push_approval.py"
 INSTALL_HOOKS_SCRIPT = PLUGIN_ROOT / "scripts" / "install_git_hooks.py"
+BOUNDARIES_SCRIPT = PLUGIN_ROOT / "scripts" / "marketplace_boundaries.py"
+PLUGIN_CREATOR_SCRIPT = Path.home() / ".codex" / "skills" / ".system" / "plugin-creator" / "scripts" / "create_basic_plugin.py"
+POST_REWRITE_HOOK = PLUGIN_ROOT / "git-hooks" / "post-rewrite"
 COMMIT_TRAILER = "Co-authored-by: GPT-5 <noreply@openai.com>"
 
 
@@ -65,6 +68,15 @@ class TargetWorkspaceTests(unittest.TestCase):
     def run_install_hooks(self) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["python3", str(INSTALL_HOOKS_SCRIPT)],
+            capture_output=True,
+            check=False,
+            env=self.environment,
+            text=True,
+        )
+
+    def run_boundaries(self, *arguments: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", str(BOUNDARIES_SCRIPT), *arguments],
             capture_output=True,
             check=False,
             env=self.environment,
@@ -164,6 +176,15 @@ class TargetWorkspaceTests(unittest.TestCase):
         self.assertEqual(inside.returncode, 0, inside.stderr)
         self.assertEqual(outside.returncode, 2)
         self.assertEqual(json.loads(outside.stdout)["decision"], "block")
+
+    def test_hook_blocks_non_mutating_tool_workdir_outside_worktrees(self) -> None:
+        self.configure()
+        result = self.run_script(
+            "hook",
+            payload={"tool_name": "Read", "tool_input": {"path": "README.md", "workdir": str(self.target)}},
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("blocked workdir", result.stderr)
 
     def test_hook_installs_git_hooks_for_late_created_worktree(self) -> None:
         self.configure()
@@ -359,6 +380,151 @@ class TargetWorkspaceTests(unittest.TestCase):
             text=True,
         ).stdout
         self.assertIn(COMMIT_TRAILER, message)
+
+    def test_post_rewrite_hook_reports_commit_that_lost_coauthor(self) -> None:
+        checkout = self.root / "rewrite-check"
+        subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True, text=True)
+        (checkout / "README.md").write_text("# Example\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(checkout), "add", "README.md"], check=True)
+        subprocess.run(
+            [
+                "git", "-C", str(checkout), "-c", "user.name=My Flow Test", "-c",
+                "user.email=my-flow@example.invalid", "commit", "--no-verify", "-m", "Missing trailer",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        commit = subprocess.run(
+            ["git", "-C", str(checkout), "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        ).stdout.strip()
+        result = subprocess.run(
+            ["python3", str(POST_REWRITE_HOOK), "rebase"],
+            cwd=checkout,
+            input=f"{'0' * 40} {commit}\n",
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("post-rewrite validation", result.stderr)
+        self.assertIn(COMMIT_TRAILER, result.stderr)
+
+    def test_pre_push_hook_blocks_outgoing_commit_that_bypassed_commit_msg(self) -> None:
+        checkout = self.root / "push-check"
+        remote = self.root / "push-remote.git"
+        subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "-C", str(checkout), "remote", "add", "origin", str(remote)], check=True)
+        (checkout / "README.md").write_text("# Example\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(checkout), "add", "README.md"], check=True)
+        subprocess.run(
+            [
+                "git", "-C", str(checkout), "-c", "user.name=My Flow Test", "-c",
+                "user.email=my-flow@example.invalid", "commit", "--no-verify", "-m", "Missing trailer",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(checkout), "config", "core.hooksPath", str(PLUGIN_ROOT / "git-hooks")],
+            check=True,
+        )
+        result = subprocess.run(
+            ["git", "-C", str(checkout), "push", "origin", "HEAD:refs/heads/main"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("pre-push validation", result.stderr)
+        self.assertIn("Missing trailer", result.stderr)
+
+    def test_current_marketplace_requires_boundaries_for_every_plugin(self) -> None:
+        marketplace_root = PLUGIN_ROOT.parents[3]
+        result = self.run_boundaries("validate", "--root", str(marketplace_root))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["valid"])
+
+    def test_pre_push_hook_blocks_new_marketplace_plugin_without_boundary(self) -> None:
+        checkout = self.root / "unguarded-marketplace"
+        remote = self.root / "unguarded-remote.git"
+        subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "-C", str(checkout), "remote", "add", "origin", str(remote)], check=True)
+        marketplace = checkout / ".agents" / "plugins" / "marketplace.json"
+        manifest = checkout / "plugins" / "unguarded" / ".codex-plugin" / "plugin.json"
+        marketplace.parent.mkdir(parents=True)
+        manifest.parent.mkdir(parents=True)
+        marketplace.write_text(
+            json.dumps(
+                {
+                    "name": "test-flow",
+                    "plugins": [
+                        {
+                            "name": "unguarded",
+                            "source": {"source": "local", "path": "./plugins/unguarded"},
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        manifest.write_text(json.dumps({"name": "unguarded"}), encoding="utf-8")
+        subprocess.run(["git", "-C", str(checkout), "add", "."], check=True)
+        subprocess.run(
+            [
+                "git", "-C", str(checkout), "-c", "user.name=My Flow Test", "-c",
+                "user.email=my-flow@example.invalid", "commit", "-m", "Add unguarded plugin", "-m", COMMIT_TRAILER,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(checkout), "config", "core.hooksPath", str(PLUGIN_ROOT / "git-hooks")],
+            check=True,
+        )
+        result = subprocess.run(
+            ["git", "-C", str(checkout), "push", "origin", "HEAD:refs/heads/main"],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid or missing hooks.json", result.stderr)
+
+    def test_guarded_scaffold_creates_compliant_plugin_and_detects_tampering(self) -> None:
+        marketplace_root = self.root / "marketplace"
+        marketplace = marketplace_root / ".agents" / "plugins" / "marketplace.json"
+        marketplace.parent.mkdir(parents=True)
+        marketplace.write_text(
+            json.dumps({"name": "test-flow", "interface": {"displayName": "Test Flow"}, "plugins": []}),
+            encoding="utf-8",
+        )
+        created = self.run_boundaries(
+            "create",
+            "Guarded Example",
+            "--root",
+            str(marketplace_root),
+            "--creator-script",
+            str(PLUGIN_CREATOR_SCRIPT),
+        )
+        self.assertEqual(created.returncode, 0, created.stderr)
+        plugin = marketplace_root / "plugins" / "guarded-example"
+        self.assertTrue((plugin / "scripts" / "workspace_guard.py").is_file())
+        self.assertTrue(os.access(plugin / "scripts" / "workspace_guard.py", os.X_OK))
+        hooks = json.loads((plugin / "hooks.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            hooks["hooks"]["PreToolUse"][0]["hooks"][0]["command"],
+            "./scripts/workspace_guard.py",
+        )
+
+        (plugin / "scripts" / "workspace_guard.py").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+        rejected = self.run_boundaries("validate", "--root", str(marketplace_root))
+        self.assertEqual(rejected.returncode, 1)
+        self.assertIn("differs from the canonical", rejected.stderr)
 
 
 if __name__ == "__main__":

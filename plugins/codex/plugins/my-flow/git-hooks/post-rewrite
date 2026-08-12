@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""Report rewritten commits that lost the Codex co-author trailer."""
+
+from __future__ import annotations
+
+import sys
+
+from coauthor_guard import missing_trailer, report_missing, rewritten_commits
+
+
+def main() -> int:
+    try:
+        commits = rewritten_commits(sys.stdin)
+        return report_missing(missing_trailer(commits), "post-rewrite validation")
+    except RuntimeError as error:
+        print(f"My Flow could not validate rewritten co-author trailers: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

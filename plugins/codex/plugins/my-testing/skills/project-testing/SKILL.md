@@ -5,6 +5,8 @@ description: General project testing strategy selector. Use when Codex is asked 
 
 # Project Testing
 
+This companion plugin requires the target workspace configured by My Flow. Keep every shell `workdir`, generated artifact, and implementation change inside an immediate project worktree under `<target>/worktrees`; the plugin's `PreToolUse` guard enforces that boundary even when My Testing is invoked independently.
+
 ## Start Here
 
 Choose the test strategy before running commands. If the bundled detector is available, run it from the repository root:

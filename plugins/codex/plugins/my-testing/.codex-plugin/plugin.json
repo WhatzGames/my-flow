@@ -1,6 +1,6 @@
 {
   "name": "my-testing",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260812142008",
   "description": "Project-specific test strategy selection, coverage guidance, and visual QA workflows.",
   "author": {
     "name": "Personal"

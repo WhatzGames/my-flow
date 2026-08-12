@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Reject pushes containing local commits without the Codex co-author trailer."""
+
+from __future__ import annotations
+
+import sys
+
+from coauthor_guard import commits_for_push, missing_trailer, report_missing, validate_marketplace_boundaries
+
+
+def main() -> int:
+    remote_name = sys.argv[1] if len(sys.argv) > 1 else "origin"
+    try:
+        validate_marketplace_boundaries()
+        commits = commits_for_push(remote_name, sys.stdin)
+        return report_missing(missing_trailer(commits), "pre-push validation")
+    except RuntimeError as error:
+        print(f"My Flow pre-push policy validation failed: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

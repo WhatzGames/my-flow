@@ -7,10 +7,6 @@
           {
             "type": "command",
             "command": "./scripts/workspace_guard.py"
-          },
-          {
-            "type": "command",
-            "command": "./scripts/review_guard.py"
           }
         ]
       }

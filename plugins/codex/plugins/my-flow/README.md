@@ -9,6 +9,11 @@ It provides:
 - `scripts/allow_worktree_access.py`: scoped approval handling for browser, network, file reading, and file writing inside managed worktrees.
 - `scripts/enforce_ssh_host.py`: blocks SSH and network Git transports that do not use the configured SSH Host alias.
 - `scripts/require_github_push_approval.py`: a conservative detector for GitHub publishing attempts.
+- `scripts/marketplace_boundaries.py`: creates guarded marketplace plugins and validates that every marketplace entry carries the canonical boundary.
+- `templates/workspace_guard.py`: the canonical boundary copied into every newly scaffolded companion plugin.
+- `git-hooks/commit-msg`: adds the required GPT-5 co-author trailer to new commit messages.
+- `git-hooks/post-rewrite`: reports rewritten commits that lost the required trailer after amend or rebase operations.
+- `git-hooks/pre-push`: rejects outgoing local commits that are still missing the required trailer.
 - `skills/my-flow/SKILL.md`: operating instructions for Codex workspace and publishing behavior.
 
 After a target is set, My Flow creates:
@@ -26,6 +31,18 @@ Startup refresh and interactive Git operations require SSH remotes to use the pe
 
 Within `worktrees`, permission requests are automatically allowed for non-destructive browser, network, and file operations. Requests involving paths outside `worktrees`, destructive shell commands, or GitHub publishing continue through the normal policy or explicit approval flow. Chrome and in-app browser availability remain controlled by the Codex host.
 
+Every plugin distributed by the My Flow marketplace carries a `PreToolUse` workspace guard. This keeps shell workdirs and implementation writes inside the configured `worktrees` directory even when a companion plugin is installed or invoked independently. Companion plugins require My Flow's persisted target configuration.
+
+Create future marketplace plugins through the guarded scaffold command from the marketplace repository root:
+
+```bash
+plugins/codex/plugins/my-flow/scripts/marketplace_boundaries.py create PLUGIN_NAME --root .
+```
+
+The command delegates the base manifest to Codex's plugin creator, adds the canonical executable guard and universal hook, appends the marketplace entry, then validates the complete marketplace. Directly added or modified entries are checked again on My Flow session startup and by the shared `pre-push` hook. A plugin with a missing, non-executable, or modified guard is rejected.
+
+Managed worktrees share My Flow's Git hooks. The commit hook adds the co-author trailer, the post-rewrite hook surfaces trailer loss immediately after rewritten history, and the pre-push hook is the final enforcement boundary that blocks publishing any newly introduced local commit without it.
+
 Repository target:
 
 ```text
@@ -42,4 +59,5 @@ python3 scripts/target_workspace.py set-host HOST_ALIAS
 python3 scripts/target_workspace.py refresh
 python3 scripts/require_github_push_approval.py < tests/fixtures/git-push.json
 python3 scripts/require_github_push_approval.py < tests/fixtures/git-status.json
+python3 scripts/marketplace_boundaries.py validate
 ```
