@@ -1,6 +1,6 @@
 # My Flow
 
-My Flow is a Codex plugin that maintains bare project repositories and implementation worktrees under a remembered target directory, restricts Git transport to one remembered SSH Host alias, refreshes remotes at agent startup, auto-allows routine access inside worktrees, and adds approval guardrails for GitHub publishing.
+My Flow is a Codex plugin that maintains bare project repositories and implementation worktrees under a remembered target directory, runs guarded frontend review rounds, restricts Git transport to one remembered SSH Host alias, refreshes remotes at agent startup, auto-allows routine access inside worktrees, and adds approval guardrails for GitHub publishing.
 
 It provides:
 
@@ -9,7 +9,10 @@ It provides:
 - `scripts/allow_worktree_access.py`: scoped approval handling for browser, network, file reading, and file writing inside managed worktrees.
 - `scripts/enforce_ssh_host.py`: blocks SSH and network Git transports that do not use the configured SSH Host alias.
 - `scripts/require_github_push_approval.py`: a conservative detector for GitHub publishing attempts.
+- `scripts/review_session.py`: starts, validates, and stops guarded UI and UX review rounds.
+- `scripts/review_guard.py`: blocks reviewer reads outside the designated worktree and writes outside `.reviews`.
 - `skills/my-flow/SKILL.md`: operating instructions for Codex workspace and publishing behavior.
+- `skills/frontend-reviewer/SKILL.md`: coordinates separate UI and UX subagents for up to three rounds by default.
 
 After a target is set, My Flow creates:
 

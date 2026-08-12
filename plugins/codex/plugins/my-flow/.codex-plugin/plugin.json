@@ -1,7 +1,7 @@
 {
   "name": "my-flow",
-  "version": "0.1.0+codex.20260811224404",
-  "description": "Managed worktrees, one enforced SSH Host, broad local access, and GitHub approval gates.",
+  "version": "0.1.0+codex.20260812132335",
+  "description": "Managed worktrees, guarded frontend reviews, one enforced SSH Host, and GitHub approval gates.",
   "author": {
     "name": "Personal"
   },
@@ -12,13 +12,16 @@
     "git",
     "gh",
     "hooks",
+    "frontend-review",
+    "ui",
+    "ux",
     "workspace"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "My Flow",
-    "shortDescription": "Managed worktrees with one SSH Host and guarded GitHub publishing.",
-    "longDescription": "My Flow remembers a target directory and SSH Host alias, restricts Git transport to that alias, refreshes bare repositories at agent startup, auto-allows routine worktree access, and requires explicit approval for GitHub publishing.",
+    "shortDescription": "Managed worktrees, frontend reviews, and guarded publishing.",
+    "longDescription": "My Flow remembers a target directory and SSH Host alias, runs guarded UI and UX frontend review rounds, restricts Git transport to the selected alias, refreshes bare repositories at agent startup, and requires explicit approval for GitHub publishing.",
     "developerName": "Personal",
     "category": "Developer Tools",
     "capabilities": [
@@ -28,6 +31,7 @@
     "defaultPrompt": [
       "Set my target working directory.",
       "Set my SSH Host alias.",
+      "Review this frontend with separate UI and UX passes.",
       "Prepare this GitHub push approval request."
     ]
   }
