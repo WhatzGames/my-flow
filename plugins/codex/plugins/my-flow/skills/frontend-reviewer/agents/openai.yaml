@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Reviewer"
+  short_description: "Parallel UI and UX review rounds"
+  default_prompt: "Use $frontend-reviewer to review this frontend with separate UI and UX passes."

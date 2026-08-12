@@ -43,6 +43,8 @@ After a target is set, run shell commands with `workdir` inside `<target>/worktr
 
 Inside a managed worktree, treat Chrome or the in-app browser, internet access, file reads, and file writes as available working capabilities. Use them directly when the task calls for them instead of asking the user for routine access approval. The `PermissionRequest` hook auto-allows non-destructive tool requests whose current directory and explicit file paths stay inside `worktrees`.
 
+For frontend review requests, use the companion `frontend-reviewer` skill. It coordinates exactly two UI and UX subagents, stores concise findings under the worktree's `.reviews` directory, defaults to at most three rounds, and activates a hook that blocks reviewer reads outside the designated worktree and writes outside `.reviews`.
+
 The access hook does not auto-allow destructive shell commands, paths outside `worktrees`, or GitHub publishing. Browser access still depends on Chrome or the in-app browser being installed and enabled by the Codex host; a plugin cannot install or override a host-disabled browser capability.
 
 Before any GitHub publishing action, stop and get explicit user approval. The configured SSH Host does not replace publishing approval.
