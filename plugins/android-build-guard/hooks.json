@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Shell|exec_command|functions.exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/build_guard.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/build_completion.py",
+            "timeout": 21600,
+            "statusMessage": "Waiting for the containerized Android build"
+          }
+        ]
+      }
+    ]
+  }
+}

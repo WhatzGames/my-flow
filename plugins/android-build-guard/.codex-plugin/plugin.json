@@ -1,0 +1,23 @@
+{
+  "name": "android-build-guard",
+  "version": "0.1.0",
+  "description": "Enforces isolated copy-on-write Android builds in My Flow worktrees.",
+  "author": {
+    "name": "WhatzGames"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Android Build Guard",
+    "shortDescription": "Keeps Android builds isolated and reproducible.",
+    "longDescription": "Android Build Guard directs agents through the named My Flow copy-on-write build wrappers and blocks direct AOSP, kernel, Docker, and Podman build paths that could contaminate shared source volumes.",
+    "developerName": "WhatzGames",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Build this Android device with the isolated COW workflow.",
+      "Prepare the pinned Android 4.4.4 base safely."
+    ]
+  }
+}
