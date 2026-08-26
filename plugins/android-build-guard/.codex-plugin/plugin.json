@@ -1,6 +1,6 @@
 {
   "name": "android-build-guard",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260826233936",
   "description": "Enforces isolated copy-on-write Android builds in My Flow worktrees.",
   "author": {
     "name": "WhatzGames"
