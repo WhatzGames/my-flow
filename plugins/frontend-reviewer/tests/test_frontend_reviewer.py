@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-HOOKS_PATH = PLUGIN_ROOT / "hooks.json"
+HOOKS_PATH = PLUGIN_ROOT / "hooks" / "hooks.json"
 SESSION_SCRIPT = PLUGIN_ROOT / "scripts" / "review_session.py"
 GUARD_SCRIPT = PLUGIN_ROOT / "scripts" / "review_guard.py"
 

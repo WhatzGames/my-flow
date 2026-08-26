@@ -4,7 +4,7 @@ My Flow is a Codex plugin that maintains bare project repositories and implement
 
 It provides:
 
-- `hooks.json`: hooks that ask for a target workspace before work starts, fetch bare repositories at session startup, enforce work inside managed worktrees, and guard shell, git, gh, and GitHub tool calls.
+- `hooks/hooks.json`: hooks that ask for a target workspace before work starts, fetch bare repositories at session startup, enforce work inside managed worktrees, and guard shell, git, gh, and GitHub tool calls.
 - `scripts/target_workspace.py`: workspace configuration, layout initialization, bare repository refresh, and worktree enforcement.
 - `scripts/allow_worktree_access.py`: scoped approval handling for browser, network, file reading, and file writing inside managed worktrees.
 - `scripts/enforce_ssh_host.py`: blocks SSH and network Git transports that do not use the configured SSH Host alias.
