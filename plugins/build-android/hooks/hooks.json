@@ -2,11 +2,11 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Shell|exec_command|functions.exec_command",
+        "matcher": "Bash|apply_patch|Edit|Write|.*write.*|.*edit.*",
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/build_guard.py"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/build_guard.py\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/build_completion.py",
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/build_completion.py\"",
             "timeout": 21600,
             "statusMessage": "Waiting for the containerized Android build"
           }

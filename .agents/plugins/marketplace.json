@@ -41,10 +41,10 @@
       "category": "Developer Tools"
     },
     {
-      "name": "android-build-guard",
+      "name": "build-android",
       "source": {
         "source": "local",
-        "path": "./plugins/android-build-guard"
+        "path": "./plugins/build-android"
       },
       "policy": {
         "installation": "AVAILABLE",

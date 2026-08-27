@@ -1,6 +1,6 @@
 {
   "name": "frontend-reviewer",
-  "version": "0.1.0+codex.20260826234404",
+  "version": "0.1.0+codex.20260826235939",
   "description": "Guarded frontend reviews with separate UI and UX subagents and concise iterative findings.",
   "author": {
     "name": "Personal"

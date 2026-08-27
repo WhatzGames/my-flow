@@ -101,7 +101,10 @@ class FrontendReviewerTests(unittest.TestCase):
         entries = hooks["PreToolUse"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["matcher"], ".*")
-        self.assertEqual(entries[0]["hooks"][0]["command"], "./scripts/review_guard.py")
+        self.assertEqual(
+            entries[0]["hooks"][0]["command"],
+            'python3 "${PLUGIN_ROOT}/scripts/review_guard.py"',
+        )
 
     def test_default_round_limit_is_three_and_round_four_is_rejected(self) -> None:
         token = self.start()

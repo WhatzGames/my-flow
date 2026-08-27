@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Continue the originating Codex turn when its Android container exits."""
+"""Continue the originating Codex turn when its Build Android container exits."""
 
 from __future__ import annotations
 

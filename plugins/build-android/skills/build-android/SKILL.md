@@ -1,11 +1,13 @@
 ---
-name: android-build-guard
-description: Enforce the isolated My Flow copy-on-write workflow when preparing AOSP or building Android device trees, kernels, system images, or Miix 320 live USB images.
+name: build-android
+description: Build Android through the isolated My Flow copy-on-write workflow while requiring AOSP and kernel adjustments to be stored as repository .patch files.
 ---
 
-# Android Build Guard
+# Build Android
 
 Use the containerized builder worktree for every Android build. Do not run `repo`, `make`, `ninja`, a device packaging script, or an ad-hoc Docker/Podman build container directly.
+
+Never edit the AOSP checkout or kernel source directly. Create every AOSP or kernel adjustment as a `.patch` file in the Device Tree or container-builder `patches/` directory. The approved `container-build.sh` may apply those patches to the private COW overlays; it must not contain inline `sed`, `perl`, Python, copy, redirect, or container commands that alter AOSP/kernel source.
 
 ## Pinned setup
 
@@ -14,7 +16,7 @@ Use the containerized builder worktree for every Android build. Do not run `repo
 - Builder image: `localhost/aosp-kitkat-wheezy:cow`
 - Shared compiler cache: `aosp-ccache`
 - AOSP and kernel sources: private Podman `:O` overlays
-- Inputs: read-only Device Tree, workspace, and public ADB key
+- Inputs: read-only Device Tree, workspace, repository `.patch` files, and public ADB key
 - Private ADB key: never read or mount
 - Containers: always explicitly named and never started with `--rm`
 

@@ -5,15 +5,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/target_workspace.py startup"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/target_workspace.py\" startup"
           },
           {
             "type": "command",
-            "command": "./scripts/target_workspace.py refresh"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/target_workspace.py\" refresh"
           },
           {
             "type": "command",
-            "command": "./scripts/install_git_hooks.py"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/install_git_hooks.py\""
           }
         ]
       }
@@ -23,7 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/target_workspace.py hook"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/target_workspace.py\" hook"
           }
         ]
       }
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/target_workspace.py hook"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/target_workspace.py\" hook"
           }
         ]
       },
@@ -43,11 +43,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/enforce_ssh_host.py"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/enforce_ssh_host.py\""
           },
           {
             "type": "command",
-            "command": "./scripts/require_github_push_approval.py"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/require_github_push_approval.py\""
           }
         ]
       }
@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/allow_worktree_access.py"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/allow_worktree_access.py\""
           }
         ]
       }

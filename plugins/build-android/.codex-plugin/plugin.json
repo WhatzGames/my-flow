@@ -1,0 +1,23 @@
+{
+  "name": "build-android",
+  "version": "0.1.0+codex.20260826235939",
+  "description": "Builds Android through isolated copy-on-write sources and patch-only AOSP/kernel changes.",
+  "author": {
+    "name": "WhatzGames"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Build Android",
+    "shortDescription": "Isolated Android builds with patch-only source changes.",
+    "longDescription": "Build Android directs agents through named My Flow copy-on-write wrappers and requires all AOSP and kernel adjustments to be stored as repository .patch files.",
+    "developerName": "WhatzGames",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Build this Android device with the isolated patch-only COW workflow.",
+      "Prepare the pinned Android 4.4.4 base safely."
+    ]
+  }
+}

@@ -7,8 +7,10 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.build_guard import BASE_VOLUME, evaluate, pending_path, record_pending_build
+from scripts.build_guard import BASE_VOLUME, evaluate, evaluate_write, pending_path, record_pending_build
 from scripts.build_completion import wait_for_build
+
+PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 
 
 class BuildGuardTest(unittest.TestCase):
@@ -30,7 +32,11 @@ class BuildGuardTest(unittest.TestCase):
             encoding="utf-8",
         )
         (self.device / "build.env").write_text(f"AOSP_BASE_VOLUME={BASE_VOLUME}\n", encoding="utf-8")
-        (self.device / "scripts" / "container-build.sh").touch()
+        (self.device / "scripts" / "container-build.sh").write_text(
+            "apply_patch_once /aosp /device/patches/0001-aosp.patch\n"
+            "apply_patch_once /kernel /device/patches/0002-kernel.patch\n",
+            encoding="utf-8",
+        )
 
     def tearDown(self):
         self.temp.cleanup()
@@ -40,7 +46,38 @@ class BuildGuardTest(unittest.TestCase):
         self.assertIsNone(evaluate(command, self.builder))
         self.assertIsNotNone(evaluate("make -j8 systemimage", self.device))
         self.assertIsNotNone(evaluate("podman run image make", self.builder))
+        self.assertIsNotNone(evaluate("podman exec miix320-build-001 sed -i s/a/b/ /aosp/build/core/main.mk", self.builder))
         self.assertIsNone(evaluate("podman logs miix320-build-001", self.builder))
+
+    def test_aosp_and_kernel_edits_must_be_repository_patches(self):
+        aosp = Path(self.temp.name) / "aosp"
+        (aosp / ".repo").mkdir(parents=True)
+        (aosp / "build").mkdir()
+        (aosp / "build" / "envsetup.sh").touch()
+        direct_edit = {
+            "command": f"*** Begin Patch\n*** Update File: {aosp}/build/core/main.mk\n@@\n-old\n+new\n*** End Patch"
+        }
+        self.assertIsNotNone(evaluate_write("apply_patch", direct_edit, self.device))
+        self.assertIsNotNone(evaluate("printf changed > build/core/main.mk", aosp))
+
+        patch_edit = {
+            "command": f"*** Begin Patch\n*** Add File: {self.device}/patches/0014-fix.patch\n+diff\n*** End Patch"
+        }
+        self.assertIsNone(evaluate_write("apply_patch", patch_edit, self.device))
+
+        (self.device / "scripts" / "container-build.sh").write_text(
+            "sed -i 's/old/new/' /aosp/build/core/main.mk\n",
+            encoding="utf-8",
+        )
+        command = f"./build-device.sh {self.device} miix320-build-002"
+        self.assertIsNotNone(evaluate(command, self.builder))
+
+    def test_hook_covers_shell_and_file_edits(self):
+        hooks = json.loads((PLUGIN_ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
+        pre_tool = hooks["PreToolUse"][0]
+        self.assertIn("Bash", pre_tool["matcher"])
+        self.assertIn("apply_patch", pre_tool["matcher"])
+        self.assertIn("${PLUGIN_ROOT}", pre_tool["hooks"][0]["command"])
 
     def test_build_is_recorded_and_failure_continues_with_logs(self):
         state_root = Path(self.temp.name) / "state"
