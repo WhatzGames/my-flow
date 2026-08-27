@@ -180,6 +180,22 @@ class TargetWorkspaceTests(unittest.TestCase):
 
         self.assertEqual(wrapped.returncode, 0, wrapped.stderr)
 
+    def test_hook_allows_top_level_cwd_inside_worktree(self) -> None:
+        self.configure()
+        checkout = self.target / "worktrees" / "example-main"
+        checkout.mkdir()
+
+        result = self.run_script(
+            "hook",
+            payload={
+                "cwd": str(checkout),
+                "tool_name": "functions.exec_command",
+                "tool_input": {"cmd": "git status --short"},
+            },
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_hook_installs_git_hooks_for_late_created_worktree(self) -> None:
         self.configure()
         checkout = self.target / "worktrees" / "example-main"

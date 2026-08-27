@@ -399,6 +399,8 @@ def find_workspace_violation(payload: Any, target: Path) -> str | None:
     worktrees = target / WORKTREES_DIRECTORY
     input_payload = get_tool_input(payload)
     workdir = first_string(input_payload, ("workdir", "cwd", "workingDirectory", "working_directory"))
+    if workdir is None:
+        workdir = first_string(payload, ("workdir", "cwd", "workingDirectory", "working_directory"))
     command = first_string(input_payload, ("cmd", "command", "script"))
 
     if "apply_patch" in lower_tool and command:
