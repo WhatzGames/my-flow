@@ -165,6 +165,21 @@ class TargetWorkspaceTests(unittest.TestCase):
         self.assertEqual(outside.returncode, 2)
         self.assertEqual(json.loads(outside.stdout)["decision"], "block")
 
+    def test_hook_allows_wrapped_workdir_inside_worktree(self) -> None:
+        self.configure()
+        checkout = self.target / "worktrees" / "example-main"
+        checkout.mkdir()
+
+        wrapped = self.run_script(
+            "hook",
+            payload={
+                "tool_name": "functions.exec_command",
+                "tool_input": {"arguments": {"cmd": "git status --short", "workdir": str(checkout)}},
+            },
+        )
+
+        self.assertEqual(wrapped.returncode, 0, wrapped.stderr)
+
     def test_hook_installs_git_hooks_for_late_created_worktree(self) -> None:
         self.configure()
         checkout = self.target / "worktrees" / "example-main"

@@ -489,12 +489,20 @@ def extract_text(value: Any) -> list[str]:
 
 
 def first_string(payload: Any, keys: tuple[str, ...]) -> str | None:
-    if not isinstance(payload, dict):
-        return None
-    for key in keys:
-        value = payload.get(key)
-        if isinstance(value, str) and value:
-            return value
+    if isinstance(payload, dict):
+        for key in keys:
+            value = payload.get(key)
+            if isinstance(value, str) and value:
+                return value
+        for value in payload.values():
+            found = first_string(value, keys)
+            if found:
+                return found
+    elif isinstance(payload, list):
+        for value in payload:
+            found = first_string(value, keys)
+            if found:
+                return found
     return None
 
 

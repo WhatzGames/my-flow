@@ -1,6 +1,6 @@
 {
   "name": "my-flow",
-  "version": "0.1.0+codex.20260826235939",
+  "version": "0.1.0+codex.20260827133112",
   "description": "Managed worktrees, one enforced SSH Host, broad local access, and GitHub approval gates.",
   "author": {
     "name": "Personal"
