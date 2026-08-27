@@ -39,7 +39,7 @@ At agent startup, My Flow also configures each valid immediate child worktree in
 
 Use the configured SSH Host alias for every SSH and network Git remote, for example `git@HOST_ALIAS:owner/repository.git` or `ssh://git@HOST_ALIAS/owner/repository.git`. The SSH host hook blocks direct SSH commands, Git URLs, configured Git remotes, HTTPS/Git-protocol remotes, and `gh repo clone` when they bypass the selected alias. Local filesystem remotes remain allowed. Ordinary browser and web traffic is not restricted by the SSH Host policy.
 
-After a target is set, run shell commands with `workdir` inside `<target>/worktrees` and keep file edits there. If Codex opened elsewhere, treat that as only the host launch location.
+After a target is set, run shell commands with `workdir` inside `<target>/worktrees` and keep file edits there. If Codex opened elsewhere, treat that as only the host launch location. When a programmatic shell wrapper does not forward its `workdir` to hooks, keep setting the tool `workdir` and also prefix the command with an absolute `cd <target>/worktrees/<worktree> &&` so the guard can verify the executed directory.
 
 Inside a managed worktree, treat Chrome or the in-app browser, internet access, file reads, and file writes as available working capabilities. Use them directly when the task calls for them instead of asking the user for routine access approval. The `PermissionRequest` hook auto-allows non-destructive tool requests whose current directory and explicit file paths stay inside `worktrees`.
 

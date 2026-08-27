@@ -196,6 +196,31 @@ class TargetWorkspaceTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_hook_uses_explicit_cd_when_host_cwd_is_outside(self) -> None:
+        self.configure()
+        checkout = self.target / "worktrees" / "example-main"
+        checkout.mkdir()
+
+        allowed = self.run_script(
+            "hook",
+            payload={
+                "cwd": str(self.root),
+                "tool_name": "functions.exec_command",
+                "tool_input": {"cmd": f"cd {checkout} && git status --short"},
+            },
+        )
+        blocked = self.run_script(
+            "hook",
+            payload={
+                "cwd": str(self.root),
+                "tool_name": "functions.exec_command",
+                "tool_input": {"cmd": f"cd {self.target} && git status --short"},
+            },
+        )
+
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        self.assertEqual(blocked.returncode, 2)
+
     def test_hook_installs_git_hooks_for_late_created_worktree(self) -> None:
         self.configure()
         checkout = self.target / "worktrees" / "example-main"

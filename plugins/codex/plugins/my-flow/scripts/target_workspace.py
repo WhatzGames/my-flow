@@ -417,7 +417,7 @@ def find_workspace_violation(payload: Any, target: Path) -> str | None:
         if not is_within(path, worktrees) and not is_my_flow_internal_path(path):
             return f"My Flow blocked implementation work outside `{worktrees}`. Path `{path}` is not in the managed worktrees directory."
 
-    if workdir:
+    if workdir and not (command and looks_like_shell_tool(lower_tool)):
         resolved_workdir = Path(workdir).expanduser().resolve()
         if not is_within(resolved_workdir, worktrees) and not is_my_flow_internal_path(resolved_workdir):
             return f"My Flow blocked workdir `{resolved_workdir}` outside managed worktrees directory `{worktrees}`."
@@ -435,13 +435,25 @@ def patch_paths(command: str) -> list[Path]:
 
 
 def check_shell_command(command: str, workdir: str | None, worktrees: Path) -> str | None:
-    if workdir is None:
-        return f"My Flow requires shell commands to set workdir inside `{worktrees}`."
-    resolved_workdir = Path(workdir).expanduser().resolve()
-    if not is_within(resolved_workdir, worktrees) and not is_my_flow_internal_path(resolved_workdir):
-        return f"My Flow blocked shell workdir `{resolved_workdir}` outside managed worktrees directory `{worktrees}`."
+    commands = shell_words(command)
+    resolved_workdir = Path(workdir).expanduser().resolve() if workdir else None
+    if commands and commands[0][:1] == ["cd"] and len(commands[0]) >= 2:
+        command_workdir = Path(commands[0][1]).expanduser()
+        if command_workdir.is_absolute():
+            resolved_workdir = command_workdir.resolve()
 
-    for argv in shell_words(command):
+    if resolved_workdir is None:
+        return (
+            f"My Flow requires shell commands to set workdir inside `{worktrees}`. "
+            "If the host omits tool workdir metadata, prefix the command with an absolute `cd <worktree> &&`."
+        )
+    if not is_within(resolved_workdir, worktrees) and not is_my_flow_internal_path(resolved_workdir):
+        return (
+            f"My Flow blocked shell workdir `{resolved_workdir}` outside managed worktrees directory `{worktrees}`. "
+            "If the host omits tool workdir metadata, prefix the command with an absolute `cd <worktree> &&`."
+        )
+
+    for argv in commands:
         if argv[:1] == ["cd"] and len(argv) >= 2:
             cd_target = Path(argv[1]).expanduser()
             if not cd_target.is_absolute():
