@@ -17,6 +17,7 @@ MANIFEST_REVISION = "android-4.4.4_r2.0.1"
 BUILDER_IMAGE = "localhost/aosp-kitkat-wheezy:cow"
 STATE_ROOT = Path(os.environ.get("BUILD_ANDROID_STATE", Path.home() / ".codex" / "build-android"))
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+BUILD_PARTS = {"all", "android", "kernel", "package"}
 BUILD_RE = re.compile(
     r"(?:^|[;&|\n]\s*|\s)(?:"
     r"(?:podman|docker)\s+(?:build|create|run)|"
@@ -166,8 +167,10 @@ def validate_build(argv: list[str], workdir: Path) -> str | None:
     error = validate_builder(workdir)
     if error:
         return error
-    if len(argv) != 3 or not NAME_RE.fullmatch(argv[2]):
-        return "Device builds require an absolute Device Tree path and an explicit container name."
+    if len(argv) not in {3, 4} or not NAME_RE.fullmatch(argv[2]):
+        return "Device builds require an absolute Device Tree path, an explicit container name, and optionally one build part."
+    if len(argv) == 4 and argv[3] not in BUILD_PARTS:
+        return "The optional build part must be all, android, kernel, or package."
     device = Path(argv[1]).expanduser()
     if not device.is_absolute() or not device.resolve().name.startswith("android_device_"):
         return "build-device.sh must receive an absolute My Flow android_device_* worktree path."
@@ -227,8 +230,9 @@ def record_pending_build(payload: Any, command: str, workdir: Path, state_root: 
     turn_id = first_string(payload, ("turn_id",)) or "turn"
     state_root.mkdir(parents=True, exist_ok=True)
     path = pending_path(state_root, session_id, turn_id)
+    container = argv[1] if Path(argv[0]).name == "prepare-aosp-base.sh" else argv[2]
     state = {
-        "container": argv[-1],
+        "container": container,
         "kind": Path(argv[0]).name,
         "workdir": str(workdir),
     }

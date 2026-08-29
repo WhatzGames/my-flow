@@ -44,6 +44,9 @@ class BuildGuardTest(unittest.TestCase):
     def test_only_wrapped_build_is_allowed(self):
         command = f"./build-device.sh {self.device} miix320-build-001"
         self.assertIsNone(evaluate(command, self.builder))
+        for build_part in ("all", "android", "kernel", "package"):
+            self.assertIsNone(evaluate(f"{command} {build_part}", self.builder))
+        self.assertIsNotNone(evaluate(f"{command} wifi", self.builder))
         self.assertIsNotNone(evaluate("make -j8 systemimage", self.device))
         self.assertIsNotNone(evaluate("podman run image make", self.builder))
         self.assertIsNotNone(evaluate("podman exec miix320-build-001 sed -i s/a/b/ /aosp/build/core/main.mk", self.builder))
@@ -81,7 +84,7 @@ class BuildGuardTest(unittest.TestCase):
 
     def test_build_is_recorded_and_failure_continues_with_logs(self):
         state_root = Path(self.temp.name) / "state"
-        command = f"./build-device.sh {self.device} miix320-build-001"
+        command = f"./build-device.sh {self.device} miix320-build-001 package"
         payload = {"session_id": "session", "turn_id": "turn"}
         record_pending_build(payload, command, self.builder, state_root)
         state = pending_path(state_root, "session", "turn")

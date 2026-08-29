@@ -1,6 +1,6 @@
 {
   "name": "build-android",
-  "version": "0.1.0+codex.20260826235939",
+  "version": "0.1.0+codex.20260829165427",
   "description": "Builds Android through isolated copy-on-write sources and patch-only AOSP/kernel changes.",
   "author": {
     "name": "WhatzGames"

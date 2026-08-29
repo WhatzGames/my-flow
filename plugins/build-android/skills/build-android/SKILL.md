@@ -16,6 +16,7 @@ Never edit the AOSP checkout or kernel source directly. Create every AOSP or ker
 - Builder image: `localhost/aosp-kitkat-wheezy:cow`
 - Shared compiler cache: `aosp-ccache`
 - AOSP and kernel sources: private Podman `:O` overlays
+- AOSP `out/` and kernel object trees: persistent per-device volumes
 - Inputs: read-only Device Tree, workspace, repository `.patch` files, and public ADB key
 - Private ADB key: never read or mount
 - Containers: always explicitly named and never started with `--rm`
@@ -31,8 +32,15 @@ From the `android_containerized_build-*` worktree, prepare the base once with a 
 Build a device through its `build.env` and `scripts/container-build.sh` contract:
 
 ```sh
-./build-device.sh /absolute/path/to/android_device_<vendor>_<device>-<branch> <meaningful-container-name>
+./build-device.sh /absolute/path/to/android_device_<vendor>_<device>-<branch> <meaningful-container-name> [all|android|kernel|package]
 ```
+
+`all` is the default and builds Android, builds the kernel, and packages the
+live image. Use `android` for AOSP/framework or supplicant patch changes,
+`kernel` for kernel or driver patch changes, and `package` to rebuild the
+live image from the persistent outputs. Run `all` once before using a partial
+mode on a new build state. A later `all` build is still incremental because
+only source overlays are disposable; the output volumes persist.
 
 The hook permits the exact builder-image command when the image itself must be rebuilt:
 
